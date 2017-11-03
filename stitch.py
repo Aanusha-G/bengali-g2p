@@ -7,17 +7,35 @@ import os
 with open("/Users/aanusha/bengali-g2p/character_mappings") as f:
 	data = f.readlines()
 
-mappings = {}
-for line in data:
-	character = line.split(' -> ')[0]
-	xipa = line.split(' -> ')[1].strip()
-	mappings[character] = xipa
+def g2p(word):
+	mappings = {}
+	for line in data:
+		character = line.split(' -> ')[0]
+		xipa = line.split(' -> ')[1].strip()
+		mappings[character] = xipa
 
 
-word = unicode('খিচুরি','utf-8')
-word_ipa = []
-for i in word:
-	print i
-	word_ipa.append(mappings[i.encode('utf-8')])
+	test_word = unicode('খিচুরি','utf-8')
+	word_ipa = []
+	for i in word:
+		word_ipa.append(mappings[i.encode('utf-8')])
 
-print ''.join(word_ipa)
+	return ''.join(word_ipa)
+
+
+def run_tests():
+	with open("/Users/aanusha/bengali-g2p/test_bangla") as f:
+		testdata = f.readlines()
+	test_pairs = {}
+	for line in testdata:
+		word = line.split(' ')[0]
+		pron = line.split(' ')[1].strip()
+		test_pairs[word] = pron
+	for i in test_pairs.keys():
+		g2p_output = g2p(unicode(i,'utf-8'))
+		print "Expected: ", test_pairs[i], "\nG2P: ", g2p_output
+		if test_pairs[i] == g2p_output:
+			print "pass!"
+
+
+run_tests()
