@@ -41,10 +41,14 @@ def g2p(word):
 		(u'AX\|XX\|', u'XX|'),
 		# Delete schwa followed by vowel ligatures
 		(u'AX\|(?=(?:aa|i|u|e|ow|oi|ou|)l\|)', u''),
+		# Retain all first syllable schwas (between non-archiphonemes) - this rule might be redundant: check
+		(r'(^[a-z]{1,3}\|)AX\|(?=[a-z]{1,3}\|)', r'\1ao|'),
+		# XX|j|aal| -> ae|
+		(r'XX\|j\|aal\|', r'ae|'),
 		# Word-final h is always followed by ow|
 		(u'h\|AX\|$', u'h|ow|'),
 		# Word-final schwas -> ow| for conjugate clusters
-		(r'(XX\|\w{1,3}\|)\KAX\|$', u'ow|'),
+		(r'(XX\|\w{1,3}\|)AX\|$', r'\1ow|'),
 		# Other word-final schwas are deleted
 		(u'AX\|$', u''),
 		# Alternating schwas -> ow| (after full vowel)
@@ -57,11 +61,20 @@ def g2p(word):
 		(r'sx\|XX\|', r's|'),
 		# ligature vowel + y -> ow|
 		(r'((?:aa|i|u|e|ow|oi|ou|)l\|)y\|', r'\1ow|'),
+		# plosive + j phola -> geminate
+		(r'(p|t|k|b|d|g)\|XX\|j\|', r'\1|\1|'),
+		# Handle -tam
+		(r'AX\|(?=td\|aal\|m\|)', r''),
 		# Convert all remaining shwas to ao|
 		# Might want to apply this rule in a separate step after conjugate clusters are sorted out
+		# Or after common morphemes like -tam are sorted out
 		(u'AX\|', u'ao|'),
 		# Remove all remaining halants
-		#(u'XX\|', u'')
+		(u'XX\|', u''),
+		# Nasalise vowels
+		(r'((?:aa|ae|ao|i|u|e|ow|oi|ou)l?)\|NX\|', r'\1n|'),
+		# Remove vowel ligature symbols
+		(r'(aa|ae|ao|i|u|e|ow|oi|ou)l', r'\1')
 	]
 	print "phoneme_string before schwa_deletion", phoneme_string
 
@@ -83,7 +96,6 @@ def cons_clusters(phoneme_seq):
 def syllabify(word):
 	vowels = ['aa', 'i', 'e', 'ei', 'ae', 'ao', 'ow', 'ou', 'u', 'AX', 'OW']
 	ph = word.strip('|').split('|')
-	ph = replace_ligatures(ph)
 	syl = []
 	v_flag = 0
 	c_flag = 0
@@ -101,12 +113,6 @@ def syllabify(word):
 	syl_word = ''.join(list(reversed(syl)))
 	return syl_word
 
-def replace_ligatures(phonemes_list):
-	lig_vowels = ['aal', 'il', 'el', 'oil', 'owl', 'oul', 'ul']
-	for index,phoneme in enumerate(phonemes_list):
-		if phoneme in lig_vowels:
-			phonemes_list[index] = phoneme.strip('l')
-	return(phonemes_list)
 
 def run_tests():
 	with open("/Users/aanusha/bengali-g2p/test_bangla") as f:
