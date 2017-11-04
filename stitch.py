@@ -1,25 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import os
-import re
+import regex
 #dir = os.path.dirname(__file__)
 #filename = os.path.join(dir, '/relative/path/to/file/you/want')
 #curdir = os.getcwd()
 with open("/Users/aanusha/bengali-g2p/character_mappings") as f:
 	data = f.readlines()
 
-def is_first_vowel(vin, word):
-	vowels = ['aa', 'ao', 'i', 'e', 'oi', 'ae', 'o', 'ow', 'ou',
-			  'u', 'uw', 'aal', 'il', 'el', 'ul', 'owl', 'oul',
-			  'oil', 'AX']
-	for index,i in enumerate(word): 
-		if i in vowels: 
-			first_vow_index = index
-			break
-	if vin == first_vow_index: 
-		return 1
-	else: 
-		return 0
 
 def g2p(word):
 	del_list = ['aal', 'il', 'el', 'ae', 'ao', 'oil', 'owl', 'oul', 'ul', 'XX']
@@ -42,25 +30,27 @@ def g2p(word):
 		# Delete schwa followed by vowel ligatures
 		(u'AX\|(?=(?:aa|i|u|e|ow|oi|ou|)l\|)', u''),
 		# Retain all first syllable schwas (between non-archiphonemes) - this rule might be redundant: check
-		(r'(^[a-z]{1,3}\|)AX\|(?=[a-z]{1,3}\|)', r'\1ao|'),
+		(r'^[a-z]{1,3}\|\KAX\|(?=[a-z]{1,3}\|)', r'ao|'),
 		# XX|j|aal| -> ae|
 		(r'XX\|j\|aal\|', r'ae|'),
 		# Word-final h is always followed by ow|
 		(u'h\|AX\|$', u'h|ow|'),
 		# Word-final schwas -> ow| for conjugate clusters
-		(r'(XX\|\w{1,3}\|)AX\|$', r'\1ow|'),
+		(r'XX\|\w{1,3}\|\KAX\|$', r'ow|'),
 		# Other word-final schwas are deleted
 		(u'AX\|$', u''),
+		# AX|cons|AX|$ -> ao|cons|
+		(r'AX\|([a-z]{1,3}\|$)', r'ow|\1'),
 		# Alternating schwas -> ow| (after full vowel)
-		(r'(ao\|\w{1,3}\|)AX\|', r'\1ow|'),
+		(r'ao\|\w{1,3}\|\KAX\|', r'ow|'),
 		# Alternating schwas -> ow| (after implied schwa)
-		(r'(AX\|\w{1,3}\|)AX\|', r'\1ow|'),
+		(r'AX\|\w{1,3}\|\KAX\|', r'ow|'),
 		# "swa" -> sh|
 		(u'sx\|XX\|(?:b|m)\|', u'sh|'),
 		# sx+cons -> s|
 		(r'sx\|XX\|', r's|'),
 		# ligature vowel + y -> ow|
-		(r'((?:aa|i|u|e|ow|oi|ou|)l\|)y\|', r'\1ow|'),
+		(r'(?:(?:aa|i|u|e|ow|oi|ou|)l\|)\Ky\|', r'ow|'),
 		# plosive + j phola -> geminate
 		(r'(p|t|k|b|d|g)\|XX\|j\|', r'\1|\1|'),
 		# Handle -tam
@@ -72,29 +62,20 @@ def g2p(word):
 		# Remove all remaining halants
 		(u'XX\|', u''),
 		# Nasalise vowels
-		(r'((?:aa|ae|ao|i|u|e|ow|oi|ou)l?)\|NX\|', r'\1n|'),
+		(r'(?:(?:aa|ae|ao|i|u|e|ow|oi|ou)l?)\K\|NX\|', r'n|'),
 		# Remove vowel ligature symbols
-		(r'(aa|ae|ao|i|u|e|ow|oi|ou)l', r'\1')
+		(r'(?:aa|ae|ao|i|u|e|ow|oi|ou)\Kl', r'')
 	]
 	print "phoneme_string before schwa_deletion", phoneme_string
 
 	for old, new in replacements: 
-		phoneme_string = re.sub(old, new, phoneme_string)
+		phoneme_string = regex.sub(old, new, phoneme_string)
 	print "phoneme_string after schwa_deletion" , phoneme_string
 	return syllabify(phoneme_string)
 
-def cons_clusters(phoneme_seq):
-	clust = []
-	temp = []
-	lig_vowels = ['aal', 'il', 'el', 'oil', 'owl', 'oul', 'ul']
-	for index,phoneme in enumerate(phoneme_seq):
-		if phoneme not in lig_vowels and phoneme_seq[index+1] == 'AX' and phoneme_seq[index+2] in lig_vowels:
-			clust.append(phoneme_seq[index:(index+2)])
-	print clust
-
 
 def syllabify(word):
-	vowels = ['aa', 'i', 'e', 'ei', 'ae', 'ao', 'ow', 'ou', 'u', 'AX', 'OW']
+	vowels = ['aa', 'ae', 'ao', 'ow', 'ou', 'i', 'e', 'oi', 'u', 'AX']
 	ph = word.strip('|').split('|')
 	syl = []
 	v_flag = 0
@@ -110,7 +91,15 @@ def syllabify(word):
 		if v_flag == 1 and c_flag == 1 and index != l:
 			v_flag = c_flag = 0
 			syl.append('-')
+	# Fix s|-td|ao|b|XX|-ddh|ow|
 	syl_word = ''.join(list(reversed(syl)))
+	# If first syllable has no vowel, remove last syllable marker
+	first_syll = syl_word.split('-')[0]
+	print first_syll
+	if regex.search(r'(aa|ae|ao|i|e|u|o|oi|ou)', first_syll) == None:
+		syl_word = regex.sub(r'-', r'', syl_word, 1)
+
+	#syl_word = regex.sub(r'^((?!aa|ae|ao|i|e|u|o|oi|ou)\w{1,3}\|)(?R)?-', r'\1', syl_word)
 	return syl_word
 
 
