@@ -34,26 +34,39 @@ def g2p(word):
 	for i in word:
 		map_xipa.append(mappings[i.encode('utf-8')].strip('|').split('|'))
 	phoneme_seq = [item for sublist in map_xipa for item in sublist]
-
-	print "phone_seq after schwa_deletion = ", phoneme_seq
 	phoneme_string = '|'.join(phoneme_seq)+'|'
+
+	replacements = [
+		# Delete schwa before halant
+		(u'AX\|XX\|', u'XX|'),
+		# Delete schwa followed by vowel ligatures
+		(u'AX\|(?=(?:aa|i|u|e|ow|oi|ou|)l\|)', u''),
+		# Word-final h is always followed by ow|
+		(u'h\|AX\|$', u'h|ow|'),
+		# Word-final schwas -> ow| for conjugate clusters
+		(r'(XX\|\w{1,3}\|)\KAX\|$', u'ow|'),
+		# Other word-final schwas are deleted
+		(u'AX\|$', u''),
+		# Alternating schwas -> ow| (after full vowel)
+		(r'(ao\|\w{1,3}\|)AX\|', r'\1ow|'),
+		# Alternating schwas -> ow| (after implied schwa)
+		(r'(AX\|\w{1,3}\|)AX\|', r'\1ow|'),
+		# "swa" -> sh|
+		(u'sx\|XX\|(?:b|m)\|', u'sh|'),
+		# sx+cons -> s|
+		(r'sx\|XX\|', r's|'),
+		# ligature vowel + y -> ow|
+		(r'((?:aa|i|u|e|ow|oi|ou|)l\|)y\|', r'\1ow|'),
+		# Convert all remaining shwas to ao|
+		# Might want to apply this rule in a separate step after conjugate clusters are sorted out
+		(u'AX\|', u'ao|'),
+		# Remove all remaining halants
+		#(u'XX\|', u'')
+	]
 	print "phoneme_string before schwa_deletion", phoneme_string
-	# Delete schwa before halant
-	phoneme_string = re.sub(u'AX\|XX\|',u'XX|', phoneme_string)
-	# Delete schwa followed by vowel ligatures
-	phoneme_string = re.sub(u'AX\|(?=(?:aa|i|u|e|ow|oi|ou|)l\|)', u'', phoneme_string)
-	# Word-final h is always followed by ow|
-	phoneme_string = re.sub(u'h\|AX\|$', u'h|ow|', phoneme_string)
-	# Word-final schwas -> ow| for conjugate clusters
-	phoneme_string = re.sub(r'(XX\|\w{1,3}\|)\KAX\|$', u'ow|', phoneme_string)
-	# Other word-final schwas are deleted
-	phoneme_string = re.sub(u'AX\|$', u'', phoneme_string)
-	# "swa" -> sh|
-	phoneme_string = re.sub(u'sx\|XX\|(?:b|m)\|', u'sh|', phoneme_string)
-	# Convert all remaining shwas to ao|
-	phoneme_string = re.sub(u'AX\|', u'ao|', phoneme_string)
-	# Remove all remaining halants
-	# phoneme_string = re.sub(u'XX\|', u'', phoneme_string)
+
+	for old, new in replacements: 
+		phoneme_string = re.sub(old, new, phoneme_string)
 	print "phoneme_string after schwa_deletion" , phoneme_string
 	return syllabify(phoneme_string)
 
@@ -65,10 +78,6 @@ def cons_clusters(phoneme_seq):
 		if phoneme not in lig_vowels and phoneme_seq[index+1] == 'AX' and phoneme_seq[index+2] in lig_vowels:
 			clust.append(phoneme_seq[index:(index+2)])
 	print clust
-
-
-
-
 
 
 def syllabify(word):
@@ -107,12 +116,16 @@ def run_tests():
 		word = line.split(' ')[0]
 		pron = line.split(' ')[1].strip()
 		test_pairs[word] = pron
+	tot_tests = len(test_pairs)
+	c = 0
 	for i in test_pairs.keys():
 		g2p_output = g2p(unicode(i,'utf-8'))
 		print "Expected: ", test_pairs[i], "\nG2P: ", g2p_output
 		if test_pairs[i] == g2p_output:
 			print "pass!"
+			c+=1
 		else:
 			print "Test failed"
-
+		print '________________'
+	print c, " out of ", tot_tests, " passed "
 run_tests()
