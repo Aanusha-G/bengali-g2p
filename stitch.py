@@ -2,14 +2,11 @@
 # -*- coding: utf-8 -*-
 import os
 import regex
-#dir = os.path.dirname(__file__)
-#filename = os.path.join(dir, '/relative/path/to/file/you/want')
-#curdir = os.getcwd()
-with open("/Users/aanusha/bengali-g2p/character_mappings") as f:
-	data = f.readlines()
-
 
 def g2p(word):
+	character_mappings = os.path.join(os.getcwd(), 'character_mappings')
+	with open(character_mappings) as f:
+		data = f.readlines()
 	del_list = ['aal', 'il', 'el', 'ae', 'ao', 'oil', 'owl', 'oul', 'ul', 'XX']
 	mappings = {}
 	for line in data:
@@ -17,7 +14,6 @@ def g2p(word):
 		xipa = line.split(' -> ')[1].strip()
 		mappings[character] = xipa
 
-	#test_word = unicode('খিচুরি','utf-8')
 	map_xipa = []
 	for i in word:
 		map_xipa.append(mappings[i.encode('utf-8')].strip('|').split('|'))
@@ -91,20 +87,20 @@ def syllabify(word):
 		if v_flag == 1 and c_flag == 1 and index != l:
 			v_flag = c_flag = 0
 			syl.append('-')
-	# Fix s|-td|ao|b|XX|-ddh|ow|
+	
 	syl_word = ''.join(list(reversed(syl)))
-	# If first syllable has no vowel, remove last syllable marker
+	# If first syllable has no vowel, remove first syllable marker
 	first_syll = syl_word.split('-')[0]
 	print first_syll
 	if regex.search(r'(aa|ae|ao|i|e|u|o|oi|ou)', first_syll) == None:
 		syl_word = regex.sub(r'-', r'', syl_word, 1)
 
-	#syl_word = regex.sub(r'^((?!aa|ae|ao|i|e|u|o|oi|ou)\w{1,3}\|)(?R)?-', r'\1', syl_word)
 	return syl_word
 
 
 def run_tests():
-	with open("/Users/aanusha/bengali-g2p/test_bangla") as f:
+	test_bangla = os.path.join(os.getcwd(), "test_bangla")
+	with open(test_bangla) as f:
 		testdata = f.readlines()
 	test_pairs = {}
 	for line in testdata:
@@ -123,4 +119,5 @@ def run_tests():
 			print "Test failed"
 		print '________________'
 	print c, " out of ", tot_tests, " passed "
+	
 run_tests()
