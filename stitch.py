@@ -10,9 +10,8 @@ and ZXSAMPA).
 Functions
     (1) g2p: convert Bengali graphemes to xipa phonemes
     (2) syllabify : Syllabifies generated xipa
-    (3) xipa2ipa: Converts xipa phonemes to IPA transcription
-    (4) xipa2xsampa: Converst xipa to XSAMPA
-    (5) run_tests: Runs unit tests from test_bangla file
+    (3) xipa2other: Converts xipa phonemes to IPA/XSAMPA transcription
+    (4) run_tests: Runs unit tests from test_bangla file
 
 Aanusha Ghosh (aanusha.ghosh@gmail.com)
 
@@ -52,10 +51,10 @@ def g2p(word):
 
 	replacements = [
 		# Fix putkis
-		(r'j\|OO\|', r'y|'),
-		(r'b\|OO\|', r'r|'),
-		(r'dr\|OO\|', r'rr|'),
-		(r'drh\|OO\|', r'rr|'),
+		(r'j\|AX\|OO\|', r'y|'),
+		(r'b\|AX\|OO\|', r'r|'),
+		(r'dr\|AX\|OO\|', r'rr|'),
+		(r'drh\|AX\|OO\|', r'rr|'),
 		# Delete schwa before halant
 		(r'AX\|XX\|', r'XX|'),
 		# Delete schwa followed by vowel ligatures
@@ -85,8 +84,16 @@ def g2p(word):
 		# বিশ্ব, বিদ্বান cons + b| (word-finally and syllable finally)= geminate
 		# TODO: Make this rule syllable-sensitive
 		(r'(\w{1,3}\|)XX\|b\|', r'\1\1'),
-		# ligature vowel + y -> ow|
-		(r'(?:(?:aa|i|u|e|ow|oi|ou|)l\|)\Ky\|', r'ow|'),
+		# বিজ্ঞ্যান j| + ny| = g|g|
+		(r'j\|XX\|ny\|', r'g|g|'),
+		# ব্যাঞ্জন ny| + j| = n|j|
+		(r'ny\|XX\|j\|', r'n|j|'),
+		# ao| or ow| + y| = oy|
+		(r'(ao|ow)\|y\|',r'oy|'),
+		# aa| + y| = ay
+		(r'(aa\|)y\|', r'ay|'),
+		# other ligature vowels + y -> ow|
+		(r'(?:(?:i|u|e|ow|oi|ou|)l\|)\Ky\|', r'ow|'),
 		# plosive + j phola -> geminate
 		# This rule should only apply NON-word-intially
 		(r'(?<!^)((?:p|td?|k|b|dd?|g)h?)\|XX\|j\|', r'\1|\1|'),
@@ -103,9 +110,7 @@ def g2p(word):
 		# Nasalise vowels
 		(r'(?:(?:aa|ae|ao|i|u|e|ow|oi|ou)l?)\K\|NX\|', r'n|'),
 		# Remove vowel ligature symbols
-		(r'(?:aa|ae|ao|i|u|e|ow|oi|ou)\Kl', r''),
-		# ao| or ow| + y| = oy|
-		(r'(ao|ow)\|y\|',r'oy|')
+		(r'(?:aa|ae|ao|i|u|e|ow|oi|ou)\Kl', r'')
 	]
 	#print "phoneme_string before schwa_deletion", phoneme_string
 
@@ -142,6 +147,26 @@ def syllabify(word):
 
 	return syl_word
 
+def map2others(word, mappings):
+	path_to_mappings = os.path.join(os.getcwd(), mappings)
+	with open(path_to_mappings, 'r') as f:
+		map_lines = f.readlines()
+	mappings_dict = {}
+	for line in map_lines:
+		xipa = line.split(' -> ')[0]
+		mapto = line.split(' -> ')[1].strip()
+		mappings_dict[xipa] = mapto
+	word = word.strip('|').split('|')
+	mapped_word = []
+	for index,i in enumerate(word):
+		if i in mappings_dict:
+			mapped_word.append(mappings_dict[i])
+		elif i.lstrip('-') in mappings_dict:
+			mapped_word.append('.')
+			mapped_word.append(mappings_dict[i.lstrip('-')])
+		else:
+			mapped_word.append(' ')	
+	return ''.join(mapped_word)
 
 def run_tests():
 	test_bangla = os.path.join(os.getcwd(), "test_bangla")
@@ -177,7 +202,7 @@ def run_file(filepath):
 	for i in prons_dict: 
 		print i, 't', prons_dict[i], '\n'
 
-def run_interactive():
+def run_interactive(ipa, xsampa):
 	import sys
 	while True:
 		try:
@@ -186,13 +211,18 @@ def run_interactive():
 				break
 			g2p_output = g2p(unicode(token.strip(),'utf-8'))
 			print "phoneme: ", g2p_output
+			if ipa:
+				mapped_output = map2others(g2p_output, 'ipa_mappings')
+				print "IPA: ", mapped_output
+			elif xsampa:
+				mapped_output = map2others(g2p_output, 'xsampa_mappings')
+				print "XSAMPA: ", mapped_output
 		except KeyboardInterrupt:
 			sys.exit()			
-
 
 if args.tests or (not args.filepath and not args.interactive):
 	run_tests()
 if args.filepath:
-	print "Processing tokens from your file"
-elif args.interactive:
-	run_interactive()
+	run_file(filepath, args.ipa, args.xsampa)
+elif args.interactive: 
+	run_interactive(args.ipa, args.xsampa)
