@@ -1,7 +1,37 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
+'''
+g2p.py
+~~~~~~~~~~
+
+This script converts Bengali graphemes to romanised phonemes (xipa) and then to their pronunciation (IPA
+and ZXSAMPA).
+
+Functions
+    (1) g2p: convert Bengali graphemes to xipa phonemes
+    (2) syllabify : Syllabifies generated xipa
+    (3) xipa2ipa: Converts xipa phonemes to IPA transcription
+    (4) xipa2xsampa: Converst xipa to XSAMPA
+    (5) run_tests: Runs unit tests from test_bangla file
+
+Aanusha Ghosh (aanusha.ghosh@gmail.com)
+
+Created: 2017-11-03
+Last updated: 2017-11-05 Aanusha Ghosh
+
+
+'''
 import os
 import regex
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('-i', '--interactive', action="store_true", help="read tokens from standard input")
+parser.add_argument("-f", "--file", dest = 'filepath', help="path to file containing tokens in Bengali")
+parser.add_argument("-t", "--run-tests", dest = 'tests', action = "store_true", help="Specify whether unit tests should be run. This is set to true by default if input file is not specified.")
+parser.add_argument("--ipa", action="store_true", help="return IPA transcriptions" )
+parser.add_argument("--xsampa", action="store_true", help="return XSAMPA transcriptions. If neither --ipa nor --xsampa flags are specified, xipa transcriptions are returned by default")
+args = parser.parse_args()
+
 
 def g2p(word):
 	character_mappings = os.path.join(os.getcwd(), 'character_mappings')
@@ -127,4 +157,33 @@ def run_tests():
 			print '________________'
 	print c, " out of ", tot_tests, " passed "
 	
-run_tests()
+def run_file(filepath):
+	with open(filepath, 'r') as f:
+		tokens_list = f.readlines()
+	prons_dict = {}
+	for token in tokens_list:
+		token = token.strip()
+		g2p_output = g2p(unicode(token,'utf-8'))
+		prons_dict[token] = g2p_output
+	for i in prons_dict: 
+		print i, 't', prons_dict[i], '\n'
+
+def run_interactive():
+	import sys
+	while True:
+		try:
+			token = raw_input('Token: ')
+			if token == "stop":
+				break
+			g2p_output = g2p(unicode(token.strip(),'utf-8'))
+			print "phoneme: ", g2p_output
+		except KeyboardInterrupt:
+			sys.exit()			
+
+
+if args.tests or (not args.filepath and not args.interactive):
+	run_tests()
+if args.filepath:
+	print "Processing tokens from your file"
+elif args.interactive:
+	run_interactive()
