@@ -114,11 +114,11 @@ def g2p(word):
 		# Remove vowel ligature symbols
 		(r'(?:aa|ae|ao|i|u|e|ow|oi|ou)\Kl', r'')
 	]
-	print "phoneme_string before schwa_deletion", phoneme_string
+	# print "phoneme_string before schwa_deletion", phoneme_string
 
 	for old, new in replacements: 
 		phoneme_string = regex.sub(old, new, phoneme_string)
-	print "phoneme_string after schwa_deletion" , phoneme_string
+	# print "phoneme_string after schwa_deletion" , phoneme_string
 	return syllabify(phoneme_string)
 
 
