@@ -25,4 +25,4 @@ and XSAMPA notations in a secondary step (not yet implemented).
 
 
 
-Current accuracy metrics: 25/31 = 75% 
+Current accuracy metrics: 38/52 = 73% 

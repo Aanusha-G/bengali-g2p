@@ -75,8 +75,10 @@ def g2p(word):
 		(r'ao\|\w{1,3}\|\KAX\|', r'ow|'),
 		# Alternating schwas -> ow| (after implied schwa)
 		(r'AX\|\w{1,3}\|\KAX\|', r'ow|'),
-		# "swa" -> sh|
-		(r'sx\|XX\|(?:b|m)\|', r'sh|'),
+		# "swa" -> sh| word-initially
+		(r'^sx\|XX\|(?:b|m)\|', r'sh|'),
+		# sx| + bo-fola/mo-fola -> geminate word-medially and finally
+		(r'(?<!^)s(?:x|h)\|XX\|(?:b|m|)\|',r'sh|sh|'),
 		# sx+ other cons (plosives, liquids) -> s|
 		(r'sx\|XX\|', r's|'),
 		# all other sx (not part of conjugate clusters) -> sh|
@@ -97,8 +99,8 @@ def g2p(word):
 		# plosive + j phola -> geminate
 		# This rule should only apply NON-word-intially
 		(r'(?<!^)((?:p|td?|k|b|dd?|g)h?)\|XX\|j\|', r'\1|\1|'),
-		# Clean up aspirated geminates from above step (bh|bh| -> b|bh|)
-		(r'((\w{1,2})h)\|\1\|', r'\2|\1|'),
+		# Clean up aspirated geminates from above step (bh|bh| -> b|bh|), except sh|
+		(r'(((?!s)\w{1,2})h)\|\1\|', r'\2|\1|'),
 		# Handle -tam
 		(r'AX\|(?=td\|aal\|m\|)', r''),
 		# Convert all remaining shwas to ao|
@@ -112,11 +114,11 @@ def g2p(word):
 		# Remove vowel ligature symbols
 		(r'(?:aa|ae|ao|i|u|e|ow|oi|ou)\Kl', r'')
 	]
-	#print "phoneme_string before schwa_deletion", phoneme_string
+	print "phoneme_string before schwa_deletion", phoneme_string
 
 	for old, new in replacements: 
 		phoneme_string = regex.sub(old, new, phoneme_string)
-	#print "phoneme_string after schwa_deletion" , phoneme_string
+	print "phoneme_string after schwa_deletion" , phoneme_string
 	return syllabify(phoneme_string)
 
 
