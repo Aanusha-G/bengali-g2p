@@ -96,9 +96,9 @@ def g2p(word):
 		(r'(aa\|)y\|', r'ay|'),
 		# other ligature vowels + y -> ow|
 		(r'(?:(?:i|u|e|ow|oi|ou|)l\|)\Ky\|', r'ow|'),
-		# plosive + j phola -> geminate
+		# cons + j phola -> geminate
 		# This rule should only apply NON-word-intially
-		(r'(?<!^)((?:p|td?|k|b|dd?|g)h?)\|XX\|j\|', r'\1|\1|'),
+		(r'(?<!^)(\w{1,3})\|XX\|j\|', r'\1|\1|'),
 		# Clean up aspirated geminates from above step (bh|bh| -> b|bh|), except sh|
 		(r'(((?!s)\w{1,2})h)\|\1\|', r'\2|\1|'),
 		# Handle -tam
@@ -216,7 +216,7 @@ def run_interactive(ipa, xsampa):
 			if ipa:
 				mapped_output = map2others(g2p_output, 'ipa_mappings')
 				print "IPA: ", mapped_output
-			elif xsampa:
+			if xsampa:
 				mapped_output = map2others(g2p_output, 'xsampa_mappings')
 				print "XSAMPA: ", mapped_output
 		except KeyboardInterrupt:
