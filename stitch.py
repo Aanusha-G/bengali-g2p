@@ -51,6 +51,11 @@ def g2p(word):
 	phoneme_string = '|'.join(phoneme_seq)+'|'
 
 	replacements = [
+		# Fix putkis
+		(r'j\|OO\|', r'y|'),
+		(r'b\|OO\|', r'r|'),
+		(r'dr\|OO\|', r'rr|'),
+		(r'drh\|OO\|', r'rr|'),
 		# Delete schwa before halant
 		(r'AX\|XX\|', r'XX|'),
 		# Delete schwa followed by vowel ligatures
@@ -73,14 +78,18 @@ def g2p(word):
 		(r'AX\|\w{1,3}\|\KAX\|', r'ow|'),
 		# "swa" -> sh|
 		(r'sx\|XX\|(?:b|m)\|', r'sh|'),
-		# sx+cons -> s|
+		# sx+ other cons (plosives, liquids) -> s|
 		(r'sx\|XX\|', r's|'),
-		# all other sx -> sh|
+		# all other sx (not part of conjugate clusters) -> sh|
 		(r'sx\|', r'sh|'),
+		# বিশ্ব, বিদ্বান cons + b| (word-finally and syllable finally)= geminate
+		# TODO: Make this rule syllable-sensitive
+		(r'(\w{1,3}\|)XX\|b\|', r'\1\1'),
 		# ligature vowel + y -> ow|
 		(r'(?:(?:aa|i|u|e|ow|oi|ou|)l\|)\Ky\|', r'ow|'),
 		# plosive + j phola -> geminate
-		(r'((?:p|td?|k|b|dd?|g)h?)\|XX\|j\|', r'\1|\1|'),
+		# This rule should only apply NON-word-intially
+		(r'(?<!^)((?:p|td?|k|b|dd?|g)h?)\|XX\|j\|', r'\1|\1|'),
 		# Clean up aspirated geminates from above step (bh|bh| -> b|bh|)
 		(r'((\w{1,2})h)\|\1\|', r'\2|\1|'),
 		# Handle -tam
