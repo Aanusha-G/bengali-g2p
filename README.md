@@ -19,9 +19,9 @@ optional arguments:
 ```
 
 This is a work in progress. The script maps graphemes to an intermediate xipa notation 
-I've made up, along with a few archiphonemes which should ultimately be resolved to 
-actual phonemes once the rules are all in place. The xipa will be post-processed to actual IPA
-and XSAMPA notations in a secondary step (not yet implemented).
+I've made up, along with a few archiphonemes which are later resolved to 
+actual phonemes once the rules are all in place. Use the --ipa and --xsampa flags to get
+output in the respective notations.
 
 
 
