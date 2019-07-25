@@ -2,7 +2,7 @@
 Python based G2P module for Bangla
 
 ```
-usage: stitch.py [-h] [-i] [-f FILEPATH] [-t] [--ipa] [--xsampa]
+usage: run_g2p.py [-h] [-i] [-f FILEPATH] [-t] [--ipa] [--xsampa]
 
 
 optional arguments:
